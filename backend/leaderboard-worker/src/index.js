@@ -234,15 +234,191 @@ async function readBody(request) {
   return request.json();
 }
 
+
+function miniAppUrl(env) {
+  return String(env.MINI_APP_URL || "https://qw0w.github.io/koleya-telegram/").trim();
+}
+
+async function telegramApi(env, method, payload) {
+  if (!env.BOT_TOKEN) throw new Error("missing_bot_token");
+  const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await r.json().catch(() => null);
+  if (!r.ok || !data || !data.ok) {
+    throw new Error((data && data.description) || `telegram_${method}_failed`);
+  }
+  return data.result;
+}
+
+async function webhookSecret(env) {
+  if (!env.BOT_TOKEN) throw new Error("missing_bot_token");
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    enc.encode("koleya-webhook:" + env.BOT_TOKEN),
+  );
+  return hex(new Uint8Array(bytes));
+}
+
+function welcomeCopy(user) {
+  const lang = String(user?.language_code || "").toLowerCase();
+  if (lang.startsWith("ru")) {
+    return {
+      title: "🌙 <b>КОЛЕЯ</b>",
+      body:
+        "Ночная дорога зовёт. Прокладывай путь, сражайся с нечистью, возвращай эхо в лагерь и попробуй пройти дальше остальных.\n\n" +
+        "🎮 <b>Играй прямо в Telegram</b> — ничего скачивать не нужно.",
+      play: "🎮 Играть",
+      help:
+        "Иди всё дальше по дороге, выбирай карточки пути и вовремя возвращайся в лагерь. Чем дальше зайдёшь — тем выше риск и награда.\n\n" +
+        "После запуска игры всё управление находится внутри Mini App.",
+    };
+  }
+  return {
+    title: "🌙 <b>KOLEYA</b>",
+    body:
+      "The night road is calling. Build your path, face dark creatures, bring Echo back to camp and see how far you can go.\n\n" +
+      "🎮 <b>Play directly in Telegram</b> — no download required.",
+    play: "🎮 Play",
+    help:
+      "Travel deeper along the road, choose path cards and return to camp before it is too late. The farther you go, the greater the risk and reward.\n\n" +
+      "All controls are inside the Mini App.",
+  };
+}
+
+function playKeyboard(env, text) {
+  return {
+    inline_keyboard: [[
+      {
+        text,
+        web_app: { url: miniAppUrl(env) },
+      },
+    ]],
+  };
+}
+
+async function sendWelcome(env, chatId, user) {
+  const c = welcomeCopy(user);
+  const text = c.title + "\n\n" + c.body;
+  const photo = String(env.WELCOME_IMAGE_URL || "").trim();
+
+  if (photo) {
+    try {
+      await telegramApi(env, "sendPhoto", {
+        chat_id: chatId,
+        photo,
+        caption: text,
+        parse_mode: "HTML",
+        reply_markup: playKeyboard(env, c.play),
+      });
+      return;
+    } catch {
+      // Fall back to a normal message if the image URL is temporarily unavailable.
+    }
+  }
+
+  await telegramApi(env, "sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    reply_markup: playKeyboard(env, c.play),
+  });
+}
+
+async function sendHelp(env, chatId, user) {
+  const c = welcomeCopy(user);
+  await telegramApi(env, "sendMessage", {
+    chat_id: chatId,
+    text: c.help,
+    reply_markup: playKeyboard(env, c.play),
+  });
+}
+
+async function handleTelegramWebhook(request, env) {
+  const expected = await webhookSecret(env);
+  const received = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
+  if (!timingSafeHexEqual(expected, received)) {
+    return json({ ok: false, error: "bad_webhook_secret" }, 403);
+  }
+
+  const update = await request.json().catch(() => null);
+  const message = update?.message;
+  if (!message || message.chat?.type !== "private") {
+    return json({ ok: true });
+  }
+
+  const text = String(message.text || "").trim();
+  const command = text.split(/\s+/)[0].split("@")[0].toLowerCase();
+
+  if (command === "/start" || command === "/play") {
+    await sendWelcome(env, message.chat.id, message.from);
+  } else if (command === "/help") {
+    await sendHelp(env, message.chat.id, message.from);
+  }
+
+  return json({ ok: true });
+}
+
+async function configureTelegramBot(origin, env) {
+  if (!env.BOT_TOKEN) throw new Error("missing_bot_token");
+  const secret = await webhookSecret(env);
+  const appUrl = miniAppUrl(env);
+
+  const webhook = await telegramApi(env, "setWebhook", {
+    url: origin + "/telegram/webhook",
+    secret_token: secret,
+    allowed_updates: ["message"],
+    drop_pending_updates: false,
+  });
+
+  const menu = await telegramApi(env, "setChatMenuButton", {
+    menu_button: {
+      type: "web_app",
+      text: "🎮 Играть",
+      web_app: { url: appUrl },
+    },
+  });
+
+  const commands = await telegramApi(env, "setMyCommands", {
+    commands: [
+      { command: "play", description: "Открыть игру" },
+      { command: "help", description: "Как играть" },
+    ],
+  });
+
+  return { webhook, menu, commands, miniAppUrl: appUrl };
+}
+
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (request.method === "POST" && url.pathname === "/telegram/webhook") {
+      try {
+        return await handleTelegramWebhook(request, env);
+      } catch (error) {
+        return json({ ok: false, error: String(error?.message || "telegram_webhook_failed") }, 500);
+      }
+    }
+
+    if (request.method === "GET" && url.pathname === "/telegram/setup") {
+      try {
+        const result = await configureTelegramBot(url.origin, env);
+        return json({ ok: true, ...result });
+      } catch (error) {
+        return json({ ok: false, error: String(error?.message || "telegram_setup_failed") }, 500);
+      }
+    }
+
     const cors = corsInfo(request, env);
     if (request.method === "OPTIONS") {
       return new Response(null, { status: cors.ok ? 204 : 403, headers: cors.headers });
     }
     if (!cors.ok) return json({ ok: false, error: "origin_not_allowed" }, 403, cors.headers);
 
-    const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") {
       return json({ ok: true, service: "koleya-leaderboard", version: 1 }, 200, cors.headers);
     }
