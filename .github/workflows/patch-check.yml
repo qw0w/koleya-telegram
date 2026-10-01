@@ -3,6 +3,7 @@ name: Patch Safety Check
 on:
   push:
     branches:
+      - main
       - 'patch/**'
   pull_request:
     branches:
