@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1 — pending
+
+Portrait mobile UI polish.
+
+- Boss/warden single-card hands no longer stretch across the entire phone width.
+- Four-card hands use a balanced 2 × 2 layout in portrait mode.
+- Five-card hands use a 3 + 2 layout, keeping cards close to the comfortable three-card width.
+- Three-card hands are unchanged.
+- Achievement popups respect the iPhone/Telegram safe area and appear lower in portrait mode.
+- Landscape and desktop layouts are unchanged.
+
+
 ## 1.0.0 — 2026-10-01
 
 Stable Telegram baseline.

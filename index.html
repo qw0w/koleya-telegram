@@ -237,6 +237,36 @@
     .hand.many .card .efs{display:flex;flex-wrap:wrap;align-content:flex-start;}
     .hand.many .card .nm span:first-child{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
   }
+
+  /* Portrait mobile: readable cards without stretching/squeezing. */
+  @media (orientation:portrait) and (max-width:760px){
+    .hand[data-count="1"]{
+      grid-template-columns:minmax(0,min(44vw,180px));
+      justify-content:center;
+    }
+
+    .hand[data-count="4"],
+    .hand[data-count="5"]{
+      height:clamp(196px,28vh,250px);
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      grid-template-rows:repeat(2,minmax(0,1fr));
+      grid-auto-rows:unset;
+      gap:6px;
+    }
+    .hand[data-count="4"] .card{grid-column:span 3;}
+    .hand[data-count="5"] .card{grid-column:span 2;}
+    .hand[data-count="5"] .card:nth-child(4){grid-column:2 / span 2;}
+    .hand[data-count="5"] .card:nth-child(5){grid-column:4 / span 2;}
+
+    .hand[data-count="4"] .card,
+    .hand[data-count="5"] .card{
+      height:100%;
+      padding-left:6px;
+      padding-right:6px;
+    }
+    .hand[data-count="4"] .card canvas,
+    .hand[data-count="5"] .card canvas{height:30px!important;}
+  }
   @media (orientation:landscape){ .perks.empty{display:none;} }
   @media (orientation:landscape){
     #side{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;}
@@ -336,7 +366,8 @@
     .mobtabs button.locked{opacity:.45;} .mobtabs button.locked svg{color:var(--muted);}
     .mobtabs .dot{top:6px;right:calc(50% - 20px);}
     .mobtabs .newtag{top:2px;right:calc(50% - 34px);}
-    body.menu-mode .achtoast{top:calc(56px + env(safe-area-inset-top,0px));}
+    .achtoast{top:calc(max(env(safe-area-inset-top,0px),var(--tg-safe-top,0px)) + 6vh);}
+    body.menu-mode .achtoast{top:calc(max(env(safe-area-inset-top,0px),var(--tg-safe-top,0px)) + 56px);}
   }
   .ov.menu{overflow-y:auto;}
   @media (orientation:landscape) and (max-height:500px){ .ov.menu{padding-top:12px;padding-bottom:12px;} .menuWrap{gap:8px;} .menuWrap .logo{font-size:42px;} .tag{display:none;} .mbottom{gap:8px;} .mfoot .iconsm{min-height:34px;min-width:34px;} .mb{min-height:44px;} .mb.go{min-height:50px;} .mb .mt small{display:none;} .mstats div{padding:4px;} .mstats span{font-size:8.5px;} .orn{display:none;} }
@@ -3472,7 +3503,7 @@ function renderHand(){
   const hand=$("handEl"), S=T();
   if(!run||run.phase!=="forward"){ hand.style.visibility="hidden"; return; }
   hand.style.visibility="visible";
-  hand.style.setProperty("--n",run.hand.length); hand.classList.toggle("many",run.hand.length>=4);
+  hand.style.setProperty("--n",run.hand.length); hand.dataset.count=String(run.hand.length); hand.classList.toggle("many",run.hand.length>=4);
   const deal=dealNext&&!busy; if(deal) dealNext=false;
   hand.style.opacity=busy?"0.55":"1";
   hand.innerHTML=run.hand.map((k,i)=>{
