@@ -1,0 +1,30 @@
+name: Emergency rollback to stable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout production
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore last confirmed-good game files
+        run: |
+          git fetch origin stable
+          git checkout origin/stable -- index.html telegram-config.js fonts .nojekyll VERSION
+          if git diff --quiet; then
+            echo "Production already matches stable."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html telegram-config.js fonts .nojekyll VERSION
+          git commit -m "Emergency rollback to stable"
+          git push origin HEAD:main
