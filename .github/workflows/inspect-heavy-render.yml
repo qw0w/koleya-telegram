@@ -1,0 +1,38 @@
+name: Inspect heavy render functions
+
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-heavy-render.yml'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract heavy renderer functions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("index.html").read_text(encoding="utf-8")
+          needles=[
+            "function drawRoad(",
+            "function drawMist(",
+            "function drawWeather(",
+            "function updMotes(",
+            "function drawMotes(",
+            "function ambientFx(",
+            "function drawPartsWorld(",
+            "function drawPartsGlow(",
+            "function updParts(",
+            "function drawDecor(",
+            "function drawBuilding("
+          ]
+          for needle in needles:
+              i=s.find(needle)
+              print("\n===== ",needle," @ ",i," =====")
+              if i>=0:
+                  j=s.find("\nfunction ",i+20)
+                  if j<0 or j>i+22000: j=i+22000
+                  print(s[i:j])
+          PY
