@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — pending
+
+Telegram global leaderboard.
+
+- Replaces the old Yandex-only records screen with a shared Telegram leaderboard.
+- Adds a Cloudflare Worker + D1 backend.
+- Validates Telegram WebApp initData on the server before trusting user identity.
+- Migrates an existing local best score when the player opens the records screen.
+- Submits new personal records automatically after a run.
+- Shows the global top 10 and the current player's rank.
+- Keeps the production v1.0.0 build untouched until the backend is deployed and tested.
+
 ## 1.0.0 — 2026-10-01
 
 Stable Telegram baseline.
