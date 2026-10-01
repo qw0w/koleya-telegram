@@ -5475,6 +5475,21 @@ function drawRoadRaw(ctx,pts){
     if(regionOf(Math.max(1,p.j))===R_FROST){ ell(ctx,x,y,3.5,1.6,"#e8f2ff"); continue; }
     ctx.strokeStyle=R.gr; ctx.lineWidth=1.1; ctx.beginPath(); for(let q=-1;q<=1;q++){ ctx.moveTo(x+q*1.4,y+1); ctx.lineTo(x+q*2.2+sw,y-3-(q===0?1:0)); } ctx.stroke(); }
 }
+let lightMaskCache=null, warmLightCache=null;
+function lightMaskSprite(){
+  if(lightMaskCache) return lightMaskCache;
+  const cv=document.createElement("canvas"); cv.width=cv.height=128;
+  const g=cv.getContext("2d"), r=64, gr=g.createRadialGradient(r,r,r*0.15,r,r,r);
+  gr.addColorStop(0,"rgba(0,0,0,1)"); gr.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=gr; g.fillRect(0,0,128,128); lightMaskCache=cv; return cv;
+}
+function warmLightSprite(){
+  if(warmLightCache) return warmLightCache;
+  const cv=document.createElement("canvas"); cv.width=cv.height=128;
+  const g=cv.getContext("2d"), r=64, gr=g.createRadialGradient(r,r,0,r,r,r);
+  gr.addColorStop(0,"rgba(255,190,110,.10)"); gr.addColorStop(1,"rgba(255,190,110,0)");
+  g.fillStyle=gr; g.fillRect(0,0,128,128); warmLightCache=cv; return cv;
+}
 let dayK=0;
 function darkness(){ const p=run?run.pos:0; return Math.min(0.74,0.46+p*0.011)*(1-0.6*dayK); }
 
@@ -5579,7 +5594,7 @@ function frame(now){
   dctx.setTransform(DPR/2,0,0,DPR/2,0,0); dctx.globalCompositeOperation="source-over";
   dctx.clearRect(0,0,W,H); dctx.fillStyle="rgba("+RG.dark+","+darkness()+")"; dctx.fillRect(0,0,W,H);
   dctx.globalCompositeOperation="destination-out";
-  const light=(wx,wy,rad)=>{ const [px,py]=toS(wx,wy), g=dctx.createRadialGradient(px,py,rad*0.15,px,py,rad); g.addColorStop(0,"rgba(0,0,0,1)"); g.addColorStop(1,"rgba(0,0,0,0)"); dctx.fillStyle=g; dctx.fillRect(px-rad,py-rad,rad*2,rad*2); };
+  const light=(wx,wy,rad)=>{ const [px,py]=toS(wx,wy), sp=lightMaskSprite(); dctx.drawImage(sp,px-rad,py-rad,rad*2,rad*2); };
   const pos=run?run.pos:0;
   light(heroPx.x,heroPx.y,CELL*z*(3.8-Math.min(1.1,pos*0.04))*(1+Math.sin(t*11)*0.012+Math.sin(t*6.7)*0.01));
   if(!run){ light(CELL*3.2,-CELL*2.2,CELL*z*2.4); light(CELL*5.5,-CELL*3.6,CELL*z*1.6);
@@ -5590,8 +5605,8 @@ function frame(now){
   ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(dk,0,0,dk.width,dk.height,0,0,cv.width,cv.height); ctx.setTransform(DPR,0,0,DPR,0,0);
   if(dayK>0.01){ const sg=ctx.createLinearGradient(0,0,0,H); sg.addColorStop(0,"rgba(255,176,110,"+(0.16*dayK)+")"); sg.addColorStop(0.55,"rgba(255,200,150,"+(0.05*dayK)+")"); sg.addColorStop(1,"rgba(255,200,150,0)"); ctx.fillStyle=sg; ctx.fillRect(0,0,W,H); }
   drawWeather(ctx,dt,curR);
-  const [hx,hy]=toS(heroPx.x,heroPx.y), warm=ctx.createRadialGradient(hx,hy,0,hx,hy,CELL*z*2);
-  warm.addColorStop(0,"rgba(255,190,110,.10)"); warm.addColorStop(1,"rgba(255,190,110,0)"); ctx.fillStyle=warm; ctx.fillRect(0,0,W,H);
+  const [hx,hy]=toS(heroPx.x,heroPx.y), warmR=CELL*z*2, warm=warmLightSprite();
+  ctx.drawImage(warm,hx-warmR,hy-warmR,warmR*2,warmR*2);
   ctx.save(); ctx.translate(W/2+sx,H/2+sy); ctx.scale(z,z); ctx.translate(-cam.x,-cam.y); ctx.globalAlpha=0.85; drawFlyers(ctx); ctx.restore(); ctx.globalAlpha=1;
   drawMotes(ctx,toS,z,t);
   drawPartsGlow(ctx,toS,z);
