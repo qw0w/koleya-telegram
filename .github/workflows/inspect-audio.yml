@@ -1,0 +1,24 @@
+name: Inspect audio mixer
+
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-audio.yml'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show audio-related code
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("index.html").read_text(encoding="utf-8")
+          needles=["function tone","function noise","const SFX","let actx","musicGain","sfxGain","masterGain","createGain()","hit:()=>","hurt:()=>"]
+          for needle in needles:
+              i=s.find(needle)
+              print("\n###", needle, "at", i)
+              if i>=0:
+                  print(s[max(0,i-900):i+2200])
+          PY
