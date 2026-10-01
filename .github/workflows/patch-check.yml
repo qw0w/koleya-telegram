@@ -33,5 +33,12 @@ jobs:
           PY
           node --check /tmp/koleya-inline.js
 
+      - name: Validate leaderboard backend
+        run: |
+          if [ -f backend/leaderboard-worker/src/index.js ]; then
+            node --check backend/leaderboard-worker/src/index.js
+            node -e 'JSON.parse(require("fs").readFileSync("backend/leaderboard-worker/wrangler.jsonc","utf8"))'
+          fi
+
       - name: Summary
         run: echo "Patch passed safety checks."
