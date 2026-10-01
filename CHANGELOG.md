@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2 — pending
+
+Portrait mobile card layout refinement.
+
+- Boss/warden single-card hands use the same card width as a normal 3-card hand and stay centered.
+- Four- and five-card hands no longer shrink cards or use multi-row grids.
+- Extra cards keep the normal 3-card size and are reached by horizontal swipe.
+- Three-card hands are unchanged.
+- The iPhone achievement safe-area fix from v1.0.1 is preserved.
+
+
 ## 1.0.1 — pending
 
 Portrait mobile UI polish.

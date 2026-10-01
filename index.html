@@ -238,35 +238,96 @@
     .hand.many .card .nm span:first-child{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;}
   }
 
-  /* Portrait mobile: readable cards without stretching/squeezing. */
+  /* Portrait mobile: keep every card the same size as a normal 3-card hand.
+     Extra cards stay off-screen and are reached with a horizontal swipe. */
   @media (orientation:portrait) and (max-width:760px){
     .hand[data-count="1"]{
-      grid-template-columns:minmax(0,min(44vw,180px));
+      grid-template-columns:calc((100% - 12px) / 3);
       justify-content:center;
     }
 
     .hand[data-count="4"],
     .hand[data-count="5"]{
-      height:clamp(196px,28vh,250px);
-      grid-template-columns:repeat(6,minmax(0,1fr));
-      grid-template-rows:repeat(2,minmax(0,1fr));
-      grid-auto-rows:unset;
-      gap:6px;
+      grid-template-columns:none;
+      grid-auto-flow:column;
+      grid-auto-columns:calc((100% - 12px) / 3);
+      grid-auto-rows:100%;
+      justify-content:start;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scroll-snap-type:x proximity;
+      overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      touch-action:pan-x;
     }
-    .hand[data-count="4"] .card{grid-column:span 3;}
-    .hand[data-count="5"] .card{grid-column:span 2;}
-    .hand[data-count="5"] .card:nth-child(4){grid-column:2 / span 2;}
-    .hand[data-count="5"] .card:nth-child(5){grid-column:4 / span 2;}
+    .hand[data-count="4"]::-webkit-scrollbar,
+    .hand[data-count="5"]::-webkit-scrollbar{display:none;}
 
     .hand[data-count="4"] .card,
     .hand[data-count="5"] .card{
       height:100%;
-      padding-left:6px;
-      padding-right:6px;
+      gap:4px;
+      padding:6px;
+      scroll-snap-align:start;
     }
+
+    /* Undo the old compact 4–5 card styling: swiped cards should look like normal cards. */
     .hand[data-count="4"] .card canvas,
-    .hand[data-count="5"] .card canvas{height:30px!important;}
+    .hand[data-count="5"] .card canvas{height:44px!important;}
+    .hand[data-count="4"] .card .cat,
+    .hand[data-count="5"] .card .cat{display:block;font-size:10.5px;letter-spacing:.07em;}
+    .hand[data-count="4"] .card .nm,
+    .hand[data-count="5"] .card .nm{font-size:14.5px;letter-spacing:normal;line-height:normal;}
+    .hand[data-count="4"] .card .nm span:first-child,
+    .hand[data-count="5"] .card .nm span:first-child{
+      display:block;
+      white-space:nowrap;
+      word-break:normal;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      -webkit-line-clamp:unset;
+    }
+    .hand[data-count="4"] .card .fc,
+    .hand[data-count="5"] .card .fc{font-size:11px;}
+    .hand[data-count="4"] .card .ef,
+    .hand[data-count="5"] .card .ef{font-size:12px;padding:1px 4px;}
+    .hand[data-count="4"] .card .ef.d-ok,
+    .hand[data-count="5"] .card .ef.d-ok{display:inline-flex;}
+    .hand[data-count="4"] .card .ef.cmb,
+    .hand[data-count="5"] .card .ef.cmb{font-size:12px;gap:2px;padding:1px 4px;}
+    .hand[data-count="4"] .card .ef.cmb svg,
+    .hand[data-count="5"] .card .ef.cmb svg{width:10px;height:10px;}
+    .hand[data-count="4"] .cglyph,
+    .hand[data-count="5"] .cglyph{width:20px;height:20px;}
+    .hand[data-count="4"] .cglyph svg,
+    .hand[data-count="5"] .cglyph svg{width:12px;height:12px;}
+    .hand[data-count="4"] .card .nb,
+    .hand[data-count="5"] .card .nb{
+      display:inline-block!important;
+      width:auto;height:auto;
+      font-size:8.5px;
+      padding:1px 5px;
+      margin-left:4px;
+      box-shadow:none;
+    }
+    .hand[data-count="4"] .combo .c3,
+    .hand[data-count="5"] .combo .c3,
+    .hand[data-count="4"] .ef .lt,
+    .hand[data-count="5"] .ef .lt{display:inline;}
+    .hand[data-count="4"] .card .ds,
+    .hand[data-count="5"] .card .ds{
+      display:-webkit-box!important;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+    }
   }
+  @media (orientation:portrait) and (max-width:760px) and (min-height:760px){
+    .hand[data-count="4"] .card canvas,
+    .hand[data-count="5"] .card canvas{height:50px!important;}
+  }
+
   @media (orientation:landscape){ .perks.empty{display:none;} }
   @media (orientation:landscape){
     #side{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;}
