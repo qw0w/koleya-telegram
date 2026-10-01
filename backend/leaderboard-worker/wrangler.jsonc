@@ -5,6 +5,7 @@
   "workers_dev": true,
   "vars": {
     "ALLOWED_ORIGIN": "https://qw0w.github.io",
-    "INIT_DATA_MAX_AGE": "86400"
+    "INIT_DATA_MAX_AGE": "86400",
+    "MINI_APP_URL": "https://qw0w.github.io/koleya-telegram/"
   }
 }
