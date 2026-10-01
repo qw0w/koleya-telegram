@@ -1,0 +1,36 @@
+name: Patch Safety Check
+
+on:
+  push:
+    branches:
+      - 'patch/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Project safety checks
+        run: python3 .github/scripts/patch_check.py
+
+      - name: Validate telegram-config.js
+        run: node --check telegram-config.js
+
+      - name: Validate inline game JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path("index.html").read_text(encoding="utf-8")
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', s, re.S|re.I)
+          Path("/tmp/koleya-inline.js").write_text("\n".join(blocks), encoding="utf-8")
+          PY
+          node --check /tmp/koleya-inline.js
+
+      - name: Summary
+        run: echo "Patch passed safety checks."
