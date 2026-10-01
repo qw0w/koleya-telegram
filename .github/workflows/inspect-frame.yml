@@ -1,0 +1,22 @@
+name: Inspect frame loop
+
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-frame.yml'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract frame loop
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("index.html").read_text(encoding="utf-8")
+          for needle in ["function frame(", "function frame(){", "const frame=", "function tick(", "function tick(){"]:
+              i=s.find(needle)
+              print("NEEDLE",needle,"AT",i)
+              if i>=0: print(s[i-4000:i+24000])
+          PY
